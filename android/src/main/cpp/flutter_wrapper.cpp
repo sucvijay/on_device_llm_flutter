@@ -11,9 +11,10 @@ static llama_sampler* g_sampler = nullptr;
 static bool has_gguf_extension(const char* model_path) {
     if (!model_path) return false;
     const std::string path(model_path);
-    constexpr const char* kExt = ".gguf";
-    return path.size() >= std::strlen(kExt) &&
-           path.compare(path.size() - std::strlen(kExt), std::strlen(kExt), kExt) == 0;
+    constexpr char kExt[] = ".gguf";
+    constexpr size_t kExtLen = sizeof(kExt) - 1;
+    return path.size() >= kExtLen &&
+           path.compare(path.size() - kExtLen, kExtLen, kExt) == 0;
 }
 
 extern "C" {
@@ -22,6 +23,7 @@ void flutter_free();
 
 bool flutter_load_model(const char* model_path,
                         const char* mmproj_path) {
+    // Reserved for separate multimodal projection loading in future revisions.
     (void) mmproj_path;
 
     if (!has_gguf_extension(model_path)) return false;

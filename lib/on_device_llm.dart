@@ -8,6 +8,8 @@ import 'on_device_llm_platform_interface.dart';
 class OnDeviceLlm {
   OnDeviceLlm({DynamicLibrary? dynamicLibrary}) : _dynamicLibrary = dynamicLibrary;
 
+  static const int defaultStreamChunkSize = 32;
+
   final DynamicLibrary? _dynamicLibrary;
   DynamicLibrary? _resolvedDynamicLibrary;
 
@@ -70,7 +72,14 @@ class OnDeviceLlm {
     }
   }
 
-  Stream<String> streamGenerate(String prompt, {int chunkSize = 32}) async* {
+  /// Emits a chunked stream from the generated response text.
+  ///
+  /// This currently chunks the full native `generate` output instead of
+  /// token-by-token native streaming.
+  Stream<String> streamGenerate(
+    String prompt, {
+    int chunkSize = defaultStreamChunkSize,
+  }) async* {
     if (chunkSize <= 0) {
       throw ArgumentError.value(chunkSize, 'chunkSize', 'must be greater than 0');
     }

@@ -48,6 +48,14 @@ void main() {
     );
   });
 
+  test('streamGenerate uses default chunk size', () async {
+    final onDeviceLlmPlugin = StubOnDeviceLlm('hello world');
+    expect(
+      onDeviceLlmPlugin.streamGenerate('hi'),
+      emitsInOrder(<String>['hello world', emitsDone]),
+    );
+  });
+
   test('streamGenerate throws for invalid chunk size', () {
     final onDeviceLlmPlugin = StubOnDeviceLlm('hello world');
     expect(
