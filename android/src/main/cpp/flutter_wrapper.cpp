@@ -8,10 +8,25 @@ static llama_model* g_model = nullptr;
 static llama_context* g_ctx = nullptr;
 static llama_sampler* g_sampler = nullptr;
 
+static bool has_gguf_extension(const char* model_path) {
+    if (!model_path) return false;
+    const std::string path(model_path);
+    constexpr const char* kExt = ".gguf";
+    return path.size() >= std::strlen(kExt) &&
+           path.compare(path.size() - std::strlen(kExt), std::strlen(kExt), kExt) == 0;
+}
+
 extern "C" {
+
+void flutter_free();
 
 bool flutter_load_model(const char* model_path,
                         const char* mmproj_path) {
+    (void) mmproj_path;
+
+    if (!has_gguf_extension(model_path)) return false;
+
+    flutter_free();
 
     llama_backend_init();
 
@@ -140,5 +155,4 @@ void flutter_free() {
 
     llama_backend_free();
 }
-
 }
