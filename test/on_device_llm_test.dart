@@ -18,6 +18,21 @@ class StubOnDeviceLlm extends OnDeviceLlm {
 
   @override
   Future<String?> generate(String prompt) async => output;
+
+  @override
+  Stream<String> streamGenerate(
+    String prompt, {
+    int chunkSize = OnDeviceLlm.defaultStreamChunkSize,
+  }) async* {
+    if (chunkSize <= 0) {
+      throw ArgumentError.value(chunkSize, 'chunkSize', 'must be greater than 0');
+    }
+
+    for (var i = 0; i < output.length; i += chunkSize) {
+      final end = (i + chunkSize < output.length) ? i + chunkSize : output.length;
+      yield output.substring(i, end);
+    }
+  }
 }
 
 void main() {

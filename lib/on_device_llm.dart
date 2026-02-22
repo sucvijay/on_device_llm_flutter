@@ -25,6 +25,14 @@ class OnDeviceLlm {
         Pointer<Utf8> Function(Pointer<Utf8>),
         Pointer<Utf8> Function(Pointer<Utf8>)
       >('flutter_generate');
+  int Function(Pointer<Utf8>) get _streamStartNative =>
+      _library.lookupFunction<Uint8 Function(Pointer<Utf8>), int Function(Pointer<Utf8>)>(
+        'flutter_stream_start',
+      );
+  Pointer<Utf8> Function() get _streamNextNative =>
+      _library.lookupFunction<Pointer<Utf8> Function(), Pointer<Utf8> Function()>(
+        'flutter_stream_next',
+      );
   void Function() get _closeNative =>
       _library.lookupFunction<Void Function(), void Function()>('flutter_free');
 
@@ -72,10 +80,7 @@ class OnDeviceLlm {
     }
   }
 
-  /// Emits a chunked stream from the generated response text.
-  ///
-  /// This currently chunks the full native `generate` output instead of
-  /// token-by-token native streaming.
+  /// Emits streamed generation output using native token sampling.
   Stream<String> streamGenerate(
     String prompt, {
     int chunkSize = defaultStreamChunkSize,
@@ -83,14 +88,34 @@ class OnDeviceLlm {
     if (chunkSize <= 0) {
       throw ArgumentError.value(chunkSize, 'chunkSize', 'must be greater than 0');
     }
-    final output = await generate(prompt);
-    if (output == null || output.isEmpty) {
+    final promptPtr = prompt.toNativeUtf8();
+    final started = _streamStartNative(promptPtr) != 0;
+    malloc.free(promptPtr);
+
+    if (!started) {
       return;
     }
 
-    for (var i = 0; i < output.length; i += chunkSize) {
-      final end = (i + chunkSize < output.length) ? i + chunkSize : output.length;
-      yield output.substring(i, end);
+    final buffer = StringBuffer();
+    while (true) {
+      final piecePtr = _streamNextNative();
+      if (piecePtr == nullptr) {
+        break;
+      }
+      final piece = piecePtr.toDartString();
+      if (piece.isEmpty) {
+        continue;
+      }
+
+      buffer.write(piece);
+      if (buffer.length >= chunkSize) {
+        yield buffer.toString();
+        buffer.clear();
+      }
+    }
+
+    if (buffer.isNotEmpty) {
+      yield buffer.toString();
     }
   }
 
