@@ -1,15 +1,24 @@
 # on_device_llm
 
-A new Flutter plugin project.
+Android-only on-device llama.cpp runner for GGUF models.
 
-## Getting Started
+```dart
+final llm = OnDeviceLlm();
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/to/develop-plugins),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
+final loaded = await llm.load(
+  '/data/user/0/.../model.gguf',
+  mmprojPath: '/data/user/0/.../mmproj.gguf',
+);
+// Note: mmprojPath is reserved for separate vision projection loading and is
+// currently not consumed by the native wrapper yet.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+if (loaded) {
+  final response = await llm.generate('Write a short haiku about Flutter.');
 
+  await for (final chunk in llm.streamGenerate('Describe this image.')) {
+    // chunked streaming output
+  }
+
+  await llm.close();
+}
+```
